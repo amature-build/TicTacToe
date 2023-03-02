@@ -1,3 +1,3 @@
 # TicTacToe
 
-Create a tic tac toe game
+Create a tic-tac-toe game

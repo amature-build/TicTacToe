@@ -30,6 +30,7 @@ public class tGameUI {
         boolean result = ui.validateStartGame("$2$#45");
         Assertions.assertFalse(result);
     }
+    @SuppressWarnings("SpellCheckingInspection")
     @Test
     public void testStartGameAnyAlphaChars(){
         boolean result = ui.validateStartGame("asdfsdf");
