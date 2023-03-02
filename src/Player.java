@@ -1,6 +1,6 @@
 import java.util.List;
 
-public class Player implements IPlayer {
+public class Player {
     private String name;
     private List<Integer> posList;
 
@@ -8,29 +8,47 @@ public class Player implements IPlayer {
         this.name = name;
     }
 
-    @Override
+    /**
+     * @return Output player's name
+     */
     public String getName() {
         return this.name;
     }
 
-    @Override
+    /**
+     * Clear out past history
+     */
+    public void resetHistory() {
+        this.posList.clear();
+    }
+
+    /**
+     * set argument as player's name
+     * @param name player's name
+     */
     public void setName(String name) {
         this.name = name;
     }
 
-    @Override
+    /**
+     * @param position set player's latest position
+     */
     public void setPosition(int position) {
         this.posList.add(position);
     }
 
-    @Override
+    /**
+     * @return Outputs player's latest position
+     */
     public int getCurrentPos() {
         int curLen = this.posList.size();
         int curIndex = curLen - 1;
         return this.posList.get(curIndex);
     }
 
-    @Override
+    /**
+     * @return Outputs player's entire position
+     */
     public List<Integer> getPosHistory() {
         return this.posList;
     }
