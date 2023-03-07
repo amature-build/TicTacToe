@@ -3,6 +3,12 @@ public class Main {
         System.out.println("Hello world!");
 
         GameUI test = new GameUI();
-        test.askToStart();
+        test.gameBoard();
+        test.askPosInput();
+        test.setPositionOnBoard();
+        test.gameBoard();
+        test.askPosInput();
+        test.setPositionOnBoard();
+        test.gameBoard();
     }
 }
