@@ -1,11 +1,12 @@
-import java.util.List;
-import java.util.Random;
-import java.util.Scanner;
+import java.util.*;
 
 public class GameUI {
     private String input;
-    private Player player1, player2, currentPlayer;
-    private Player[] players = new Player[2];
+    private Player currentPlayer;
+
+    private Player[] players = {
+        new Player(), new Player()
+    };
 
     private String[][] gameboard = {
             {"0", "|", "1", "|", "2"},
@@ -15,21 +16,59 @@ public class GameUI {
             {"6", "|", "7", "|", "8"}
     };
     public GameUI(){
-        players[0] = new Player();
-        this.player1 = new Player("abc");
-        this.player2 = new Player("def");
+    }
+
+    public void askPlayersOrCpu(){
+        boolean invalidInput;
+        Scanner scan = new Scanner(System.in);
+        System.out.println("Play as Single or Multi Player.");
+
+        do {
+            System.out.println("Press number as shown below.\n1 Single Player\n2 Multi Player");
+            this.input = scan.nextLine();
+            invalidInput = !validPlayerOption();
+            if (invalidInput) {
+                System.out.println("Invalid input. Please try again.");
+            }
+        } while (invalidInput);
+
     }
 
     private void setCurrentPlayer(Player player){
         this.currentPlayer = player;
     }
 
-    private void playerRightOfFirst(){
+    private void switchState(){
+        for (Player player: players) {
+            if (player.getPlayerState().equals(EPlayerState.ACTIVE)){
+                player.setPlayerInactive();
+            } else {
+                player.setPlayerActive();
+            }
+        }
+    }
+    public void switchCurrentPlayer(){
+        switchState();
+        for (Player player: players) {
+            if (player.getPlayerState().equals(EPlayerState.ACTIVE)){
+                this.currentPlayer = player;
+            }
+        }
+    }
+    public void playerRightOfFirst(){
         Random rand = new Random();
         if (rand.nextBoolean()) {
-            setCurrentPlayer(player1);
+            setCurrentPlayer(players[0]);
+            players[0].setPlayerActive();
+            players[0].setPlacementValue("X");
+            players[1].setPlayerInactive();
+            players[1].setPlacementValue("O");
         } else {
-            setCurrentPlayer(player2);
+            setCurrentPlayer(players[1]);
+            players[1].setPlayerActive();
+            players[1].setPlacementValue("X");
+            players[0].setPlayerInactive();
+            players[0].setPlacementValue("O");
         }
     }
 
@@ -66,6 +105,19 @@ public class GameUI {
         } while (invalidInput);
     }
 
+    public void setPlayer1(){
+        players[0].setName(this.input);
+        players[0].setUserTypeUser();
+    }
+    public void setPlayer2(){
+        players[1].setName(this.input);
+        players[1].setUserTypeUser();
+    }
+    private void setCPU(){
+        players[1].setName("CPU");
+        players[1].setUserTypeCPU();
+    }
+
     public void askPosInput(){
         boolean invalidInput;
         boolean posExist = false;
@@ -86,6 +138,13 @@ public class GameUI {
         } while (invalidInput || posExist);
     }
 
+    private boolean validPlayerOption(){
+        String charList = "[12]";
+        if (this.input.length() > 1) {
+            return false;
+        }
+        return matchAgainstList(charList, this.input);
+    }
     /**
      * Compare given input against given list of given char.
      * If any matches with given list of char, regardless of Cap or not, True else False
@@ -122,19 +181,21 @@ public class GameUI {
 
     boolean positionExist(){
         int iPos = Integer.parseInt(this.input);
+        List<Integer> posList = new ArrayList<>();
         boolean output;
-        if (this.player1.getPosHistory().isEmpty()){
-            output = false;
-        } else {
-            List<Integer> posList = this.player1.getPosHistory();
-            output = posList.contains(iPos);
+
+        for (Player p : players) {
+            if (!p.getPosHistory().isEmpty()){
+                posList.addAll(p.getPosHistory());
+            }
         }
+        output = posList.contains(iPos);
         return output;
     }
 
     void setPositionOnBoard(){
         int iPos = Integer.parseInt(this.input);
-        String placement = "x";
+        String placement = this.currentPlayer.getPlacementValue();
         switch (iPos){
             case 0 -> this.gameboard[0][0] = placement;
             case 1 -> this.gameboard[0][2] = placement;
@@ -146,7 +207,7 @@ public class GameUI {
             case 7 -> this.gameboard[4][2] = placement;
             case 8 -> this.gameboard[4][4] = placement;
         }
-        this.player1.setPosition(iPos);
+        this.currentPlayer.setPosition(iPos);
     }
     void gameBoard(){
         for (String[] row: this.gameboard) {
@@ -155,5 +216,81 @@ public class GameUI {
             }
             System.out.println();
         }
+    }
+    boolean isGameWon(){
+        List<Integer> posList = this.currentPlayer.getPosHistory();
+        List<Integer[]> winList = new PossibleWin().getWinMoveList();
+        Collections.sort(posList);
+
+        for (Integer[] list : winList) {
+            if (posList.containsAll(List.of(list))){
+                return true;
+            }
+        }
+        return false;
+    }
+    boolean isGameDraw(){
+        List<Integer> posList = new ArrayList<>();
+
+        for (Player player : players) {
+            posList.addAll(player.getPosHistory());
+        }
+
+        int total = posList.stream()
+                .mapToInt(value -> value)
+                .sum();
+
+        return total == 36 && posList.size() == 9;
+    }
+    void promptWon(){
+        System.out.println("Congratulation Player " + this.currentPlayer.getName());
+        System.out.println("You have won the game.");
+    }
+
+    void gameEnding(){
+        boolean isCPU = players[1].getUserType().equals(EPlayerType.CPU);
+        String msg = "";
+
+
+        if (isGameWon()){
+            msg = this.currentPlayer.promptWon();
+        } else if (isGameDraw()) {
+            msg = this.currentPlayer.promptDraw();
+        }
+
+        System.out.println(msg);
+    }
+
+    void gameInProcess() {
+        boolean toContinue;
+
+        do {
+            gameBoard();
+            askPosInput();
+            setPositionOnBoard();
+            toContinue = !isGameWon();
+            if (toContinue){
+                switchCurrentPlayer();
+            }
+            if (isGameDraw()){
+                toContinue = false;
+            }
+        } while (toContinue);
+    }
+    void gamePlayerSelection(){
+        askUserName();
+        setPlayer1();
+        askPlayersOrCpu();
+
+        switch (this.input) {
+            case "1" -> {
+                setCPU();
+            }
+            case "2" -> {
+                askUserName();
+                setPlayer2();
+            }
+        }
+
     }
 }

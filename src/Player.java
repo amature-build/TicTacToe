@@ -4,11 +4,9 @@ import java.util.List;
 public class Player {
     private String name;
     private List<Integer> posList = new ArrayList<>();
-    private enum playerType {
-            USER,
-            CPU
-    }
+    private EPlayerType userType;
     private EPlayerState state = EPlayerState.INACTIVE;
+    private String placementValue;
 
     public Player(){}
     public Player(String name) {
@@ -68,5 +66,39 @@ public class Player {
     }
     public EPlayerState getPlayerState(){
         return this.state;
+    }
+    public void setPlacementValue(String placementValue){
+        this.placementValue = placementValue;
+    }
+    public String getPlacementValue(){
+        return this.placementValue;
+    }
+    public void setUserTypeUser(){
+        this.userType = EPlayerType.USER;
+    }
+    public void setUserTypeCPU(){
+        this.userType = EPlayerType.CPU;
+    }
+    public EPlayerType getUserType(){
+        return this.userType;
+    }
+    public String promptWon(){
+        String msg = "Congratulation! " +
+                this.name +
+                ".\nYou have won the game.";
+
+        return msg;
+    }
+    public String promptLose(){
+        String msg = "Too bad, " +
+                this.name +
+                ".\nYou have lost the game.";
+
+        return msg;
+    }
+    public String promptDraw(){
+        String msg = "It's a draw.\nTry harder next time.";
+
+        return msg;
     }
 }

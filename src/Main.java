@@ -1,14 +1,15 @@
 public class Main {
     public static void main(String[] args) {
-        System.out.println("Hello world!");
 
         GameUI test = new GameUI();
+        test.askToStart();
+        test.gamePlayerSelection();
+        test.playerRightOfFirst();
+        test.gameInProcess();
         test.gameBoard();
-        test.askPosInput();
-        test.setPositionOnBoard();
-        test.gameBoard();
-        test.askPosInput();
-        test.setPositionOnBoard();
-        test.gameBoard();
+        test.promptWon();
+
     }
+
+
 }
