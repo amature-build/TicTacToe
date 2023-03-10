@@ -2,7 +2,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PossibleWin {
-    private List<Integer[]> moveList = new ArrayList<>();
+    private final List<Integer[]> moveList = new ArrayList<>();
 
     public PossibleWin(){
         this.moveList.add(new Integer[]{0, 1, 2});
@@ -17,6 +17,9 @@ public class PossibleWin {
 
     public List<Integer[]> getWinMoveList(){
         return this.moveList;
+    }
+    public void removeRow(int index){
+        this.moveList.remove(index);
     }
 
 }

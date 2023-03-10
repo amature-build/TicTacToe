@@ -3,15 +3,12 @@ import java.util.List;
 
 public class Player {
     private String name;
-    private List<Integer> posList = new ArrayList<>();
+    private final List<Integer> posList = new ArrayList<>();
     private EPlayerType userType;
     private EPlayerState state = EPlayerState.INACTIVE;
     private String placementValue;
 
     public Player(){}
-    public Player(String name) {
-        this.name = name;
-    }
 
     /**
      * @return Output player's name
@@ -83,22 +80,15 @@ public class Player {
         return this.userType;
     }
     public String promptWon(){
-        String msg = "Congratulation! " +
-                this.name +
-                ".\nYou have won the game.";
 
-        return msg;
+        return "Congratulation! %s.\nYou have won the game.".formatted(this.name);
     }
     public String promptLose(){
-        String msg = "Too bad, " +
-                this.name +
-                ".\nYou have lost the game.";
 
-        return msg;
+        return "Too bad, %s.\nYou have lost the game.".formatted(this.name);
     }
     public String promptDraw(){
-        String msg = "It's a draw.\nTry harder next time.";
 
-        return msg;
+        return "It's a draw.\nTry harder next time %s.".formatted(this.name);
     }
 }

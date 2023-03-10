@@ -1,20 +1,16 @@
 import java.util.*;
+import java.util.stream.Stream;
 
 public class GameUI {
     private String input;
     private Player currentPlayer;
+    private PossibleWin data;
 
-    private Player[] players = {
+    private final Player[] players = {
         new Player(), new Player()
     };
 
-    private String[][] gameboard = {
-            {"0", "|", "1", "|", "2"},
-            {"-", "+", "-", "+", "-"},
-            {"3", "|", "4", "|", "5"},
-            {"-", "+", "-", "+", "-"},
-            {"6", "|", "7", "|", "8"}
-    };
+    private GameBoard gameboard;
     public GameUI(){
     }
 
@@ -104,6 +100,14 @@ public class GameUI {
             }
         } while (invalidInput);
     }
+    boolean isSameName(){
+        return players[0].getName().equals(this.input);
+    }
+    void promptSameNameRetry(){
+        if (isSameName()){
+            System.out.println("The name already exist. Try again.");
+        }
+    }
 
     public void setPlayer1(){
         players[0].setName(this.input);
@@ -124,7 +128,12 @@ public class GameUI {
         Scanner scan = new Scanner(System.in);
 
         do{
-            System.out.println("Please enter value to place on board.");
+            String msg = "Player " +
+                    this.currentPlayer.getName() +
+                    " " +
+                    this.currentPlayer.getPlacementValue() +
+                    "\nPlease enter a value to place on board.";
+            System.out.println(msg);
             this.input = scan.nextLine();
             invalidInput = !validatePosition();
             if (invalidInput){
@@ -154,12 +163,12 @@ public class GameUI {
      */
     private boolean matchAgainstList(String charList, String charToTest){
         for (String word : charToTest.split("")) {
-            boolean match = word.toLowerCase().matches(charList);
-            if (match){
-                return true;
+            boolean notMatch = !word.toLowerCase().matches(charList);
+            if (notMatch){
+                return false;
             }
         }
-        return false;
+        return true;
     }
     boolean validateStartGame(String word){
         if (word.length() > 1){
@@ -170,6 +179,9 @@ public class GameUI {
         return matchAgainstList(charList, word);
     }
     boolean validateUserName(String word){
+        if (word.equalsIgnoreCase("cpu")){
+            return false;
+        }
         String charList = "[a-z]";
         return matchAgainstList(charList, word);
     }
@@ -192,34 +204,185 @@ public class GameUI {
         output = posList.contains(iPos);
         return output;
     }
-
-    void setPositionOnBoard(){
-        int iPos = Integer.parseInt(this.input);
+    void setPositionOnBoard(String position){
+        int iPos = Integer.parseInt(position);
         String placement = this.currentPlayer.getPlacementValue();
         switch (iPos){
-            case 0 -> this.gameboard[0][0] = placement;
-            case 1 -> this.gameboard[0][2] = placement;
-            case 2 -> this.gameboard[0][4] = placement;
-            case 3 -> this.gameboard[2][0] = placement;
-            case 4 -> this.gameboard[2][2] = placement;
-            case 5 -> this.gameboard[2][4] = placement;
-            case 6 -> this.gameboard[4][0] = placement;
-            case 7 -> this.gameboard[4][2] = placement;
-            case 8 -> this.gameboard[4][4] = placement;
+            case 0 -> this.gameboard.setGameBoard(0,0, placement);
+            case 1 -> this.gameboard.setGameBoard(0,2, placement);
+            case 2 -> this.gameboard.setGameBoard(0,4, placement);
+            case 3 -> this.gameboard.setGameBoard(2,0, placement);
+            case 4 -> this.gameboard.setGameBoard(2,2, placement);
+            case 5 -> this.gameboard.setGameBoard(2,4, placement);
+            case 6 -> this.gameboard.setGameBoard(4,0, placement);
+            case 7 -> this.gameboard.setGameBoard(4,2, placement);
+            case 8 -> this.gameboard.setGameBoard(4,4, placement);
         }
         this.currentPlayer.setPosition(iPos);
     }
     void gameBoard(){
-        for (String[] row: this.gameboard) {
+        for (String[] row: this.gameboard.getGameBoard()) {
             for (String item: row) {
                 System.out.print(item);
             }
             System.out.println();
         }
     }
-    boolean isGameWon(){
-        List<Integer> posList = this.currentPlayer.getPosHistory();
-        List<Integer[]> winList = new PossibleWin().getWinMoveList();
+    private List<Integer> combinePosHistory(){
+        List<Integer> combinedList = new ArrayList<>();
+        for (Player player : players) {
+            combinedList.addAll(player.getPosHistory());
+        }
+        Collections.sort(combinedList);
+        return combinedList;
+    }
+    private List<Integer> posWithoutCombined(){
+        List<Integer> combinedList = combinePosHistory();
+        return Stream.of(0,1,2,3,4,5,6,7,8)
+                .filter(value -> !combinedList.contains(value))
+                .toList();
+    }
+    private List<Integer[]> nextPossibleLists(List<Integer> posList, List<Integer[]> listToLoop){
+        List<Integer[]> possibleLists = new ArrayList<>();
+        List<Integer> countList = nextCountList(posList, listToLoop);
+
+        int highest = countList.stream().max(Comparator.naturalOrder()).get();
+        if (highest > 2){
+            highest = 2;
+        }
+
+        for (int i = 0; i < countList.size(); i++) {
+            if (countList.get(i).equals(highest)){
+                possibleLists.add(listToLoop.get(i));
+            }
+        }
+        return possibleLists;
+    }
+    private List<Integer> nextCountList(List<Integer> posList, List<Integer[]> listToLoop){
+        List<Integer> countList = new ArrayList<>();
+        for (Integer[] eachList: listToLoop) {
+            int count = (int) posList.stream()
+                    .filter(value -> List.of(eachList).contains(value))
+                    .count();
+            countList.add(count);
+        }
+        return countList;
+    }
+    private void removePossibleWinThatMatched(){
+        List<Integer> combinedList = combinePosHistory();
+        List<Integer[]> winList = this.data.getWinMoveList();
+        for (int i = 0; i < winList.size(); i++) {
+            List<Integer> win = List.of(winList.get(i));
+            if (combinedList.containsAll(win)){
+                this.data.removeRow(i);
+            }
+        }
+    }
+    private String blockPlayer(List<Integer[]> playerPossiblePos){
+        List<Integer> playerPosList = players[0].getPosHistory();
+        Random rand = new Random();
+        String output = "";
+        List<Integer[]> playerPossiblePosFiltered = new ArrayList<>();
+        for (Integer[] eachList : playerPossiblePos) {
+            int count = (int) playerPosList.stream()
+                    .filter(value -> List.of(eachList).contains(value))
+                    .count();
+            if (count > 1) {
+                playerPossiblePosFiltered.add(eachList);
+            }
+        }
+        if (!playerPossiblePosFiltered.isEmpty()){
+            int randNum = rand.nextInt(playerPossiblePosFiltered.size());
+            Integer[] possibleList = playerPossiblePosFiltered.get(randNum);
+            for (int value: possibleList) {
+                if (!playerPosList.contains(value)){
+                    output = String.valueOf(value);
+                }
+            }
+        }
+
+        return output;
+    }
+    private String remainderCpuMove(){
+        List<Integer> combinedList = combinePosHistory();
+        List<Integer> remainedList = posWithoutCombined();
+        List<Integer[]> remainderMoveList = nextPossibleLists(remainedList, this.data.getWinMoveList());
+        Random rand = new Random();
+        boolean nonUsableMove;
+        String output = "";
+        List<Integer[]> remainderPossiblePosFiltered = new ArrayList<>();
+        List<Integer> countList = new ArrayList<>();
+        for (Integer[] eachList : remainderMoveList) {
+            int count = (int) combinedList.stream()
+                    .filter(value -> List.of(eachList).contains(value))
+                    .count();
+            countList.add(count);
+        }
+
+        int lowest = countList.stream().min(Comparator.naturalOrder()).get();
+
+        for (int i = 0; i < countList.size(); i++) {
+            if (countList.get(i).equals(lowest)){
+                remainderPossiblePosFiltered.add(remainderMoveList.get(i));
+            }
+        }
+
+        int randNum = rand.nextInt(remainderPossiblePosFiltered.size());
+        Integer[] possibleList = remainderPossiblePosFiltered.get(randNum);
+        do {
+            randNum = rand.nextInt(possibleList.length);
+            int possibleMove = possibleList[randNum];
+            nonUsableMove = combinedList.contains(possibleMove);
+            if (!nonUsableMove){
+                output = String.valueOf(possibleMove);
+            }
+        } while (nonUsableMove);
+
+        return output;
+    }
+    private String nextMoveCPU(){
+        String nextMove = "";
+        Random rand = new Random();
+        removePossibleWinThatMatched();
+        List<Integer> cpuPosList = players[1].getPosHistory();
+        List<Integer> playerPosList = players[0].getPosHistory();
+        List<Integer[]> winLists = this.data.getWinMoveList();
+
+
+        List<Integer[]> playerPossiblePos = nextPossibleLists(playerPosList, winLists);
+
+//      first move before player
+        if (combinePosHistory().isEmpty()){
+            nextMove = "4";
+            return nextMove;
+        }
+//      first move after player
+        if (cpuPosList.isEmpty() && !playerPosList.isEmpty()){
+            int randNum;
+            boolean exist;
+            int playerPos = playerPosList.iterator().next();
+            do {
+                randNum = rand.nextInt(9);
+                exist = randNum == playerPos;
+            } while (exist);
+            nextMove = String.valueOf(randNum);
+            return nextMove;
+        }
+//      if player has winning chance
+        String blockMove = blockPlayer(playerPossiblePos);
+        if (!blockMove.equalsIgnoreCase("")){
+            nextMove = blockMove;
+            return nextMove;
+        }
+
+//      outstanding options
+        nextMove = remainderCpuMove();
+        return nextMove;
+    }
+
+    boolean isGameWon(Player player){
+        List<Integer> posList = player.getPosHistory();
+        List<Integer[]> winList = this.data.getWinMoveList();
         Collections.sort(posList);
 
         for (Integer[] list : winList) {
@@ -230,11 +393,7 @@ public class GameUI {
         return false;
     }
     boolean isGameDraw(){
-        List<Integer> posList = new ArrayList<>();
-
-        for (Player player : players) {
-            posList.addAll(player.getPosHistory());
-        }
+        List<Integer> posList = combinePosHistory();
 
         int total = posList.stream()
                 .mapToInt(value -> value)
@@ -242,33 +401,42 @@ public class GameUI {
 
         return total == 36 && posList.size() == 9;
     }
-    void promptWon(){
-        System.out.println("Congratulation Player " + this.currentPlayer.getName());
-        System.out.println("You have won the game.");
+    private void promptEndMsg(Player player){
+        String msg;
+        if (isGameWon(player)){
+            msg = player.promptWon();
+        } else if (isGameDraw()) {
+            msg = player.promptDraw();
+        } else {
+            msg = player.promptLose();
+        }
+        System.out.println(msg);
     }
 
     void gameEnding(){
-        boolean isCPU = players[1].getUserType().equals(EPlayerType.CPU);
-        String msg = "";
 
-
-        if (isGameWon()){
-            msg = this.currentPlayer.promptWon();
-        } else if (isGameDraw()) {
-            msg = this.currentPlayer.promptDraw();
+        for (Player player : players) {
+            if (!player.getUserType().equals(EPlayerType.CPU)){
+                promptEndMsg(player);
+            }
         }
-
-        System.out.println(msg);
     }
 
     void gameInProcess() {
         boolean toContinue;
-
+        this.data = new PossibleWin();
+        this.gameboard = new GameBoard();
         do {
             gameBoard();
-            askPosInput();
-            setPositionOnBoard();
-            toContinue = !isGameWon();
+            if (this.currentPlayer.getUserType().equals(EPlayerType.CPU)){
+                this.input = nextMoveCPU();
+                setPositionOnBoard(this.input);
+                System.out.println("CPU made a move.");
+            } else {
+                askPosInput();
+                setPositionOnBoard(this.input);
+            }
+            toContinue = !isGameWon(this.currentPlayer);
             if (toContinue){
                 switchCurrentPlayer();
             }
@@ -277,20 +445,60 @@ public class GameUI {
             }
         } while (toContinue);
     }
-    void gamePlayerSelection(){
-        askUserName();
-        setPlayer1();
-        askPlayersOrCpu();
+    void gamePlayerCPU(){
+        for (Player player: players) {
+            player.resetHistory();
+        }
 
+        askPlayersOrCpu();
         switch (this.input) {
-            case "1" -> {
-                setCPU();
-            }
+            case "1" -> setCPU();
             case "2" -> {
-                askUserName();
+                do {
+                    askUserName();
+                    promptSameNameRetry();
+                } while (isSameName());
                 setPlayer2();
             }
         }
+    }
+    boolean validateRestartGame(String word){
+        if (word.length() > 1){
+            return false;
+        }
 
+        String charList = "[cq]";
+        return matchAgainstList(charList, word);
+    }
+    private boolean playGameAgain(){
+        boolean output;
+        boolean invalidInput;
+        Scanner scan = new Scanner(System.in);
+
+        do {
+            System.out.println("Press c/C to Play Again or q/Q to Quit");
+            this.input = scan.nextLine();
+            invalidInput = !validateRestartGame(this.input);
+            if (invalidInput){
+                System.out.println("Invalid Input.");
+            }
+        } while (invalidInput);
+
+        output = this.input.equalsIgnoreCase("c");
+
+        return output;
+    }
+    void runGame(){
+        askToStart();
+        askUserName();
+        setPlayer1();
+
+        do {
+            gamePlayerCPU();
+            playerRightOfFirst();
+            gameInProcess();
+            gameBoard();
+            gameEnding();
+        } while (playGameAgain());
     }
 }
