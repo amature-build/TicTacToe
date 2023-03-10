@@ -14,7 +14,7 @@ public class GameUI {
     public GameUI(){
     }
 
-    public void askPlayersOrCpu(){
+    private void askPlayersOrCpu(){
         boolean invalidInput;
         Scanner scan = new Scanner(System.in);
         System.out.println("Play as Single or Multi Player.");
@@ -43,7 +43,7 @@ public class GameUI {
             }
         }
     }
-    public void switchCurrentPlayer(){
+    private void switchCurrentPlayer(){
         switchState();
         for (Player player: players) {
             if (player.getPlayerState().equals(EPlayerState.ACTIVE)){
@@ -51,7 +51,7 @@ public class GameUI {
             }
         }
     }
-    public void playerRightOfFirst(){
+    private void playerRightOfFirst(){
         Random rand = new Random();
         if (rand.nextBoolean()) {
             setCurrentPlayer(players[0]);
@@ -68,7 +68,7 @@ public class GameUI {
         }
     }
 
-    public void askToStart(){
+    private void askToStart(){
         boolean invalidInput;
         Scanner scan = new Scanner(System.in);
         System.out.println("Welcome to Tic Tac Toe.");
@@ -87,7 +87,7 @@ public class GameUI {
 
     }
 
-    public void askUserName(){
+    private void askUserName(){
         boolean invalidInput;
         Scanner scan = new Scanner(System.in);
 
@@ -100,20 +100,20 @@ public class GameUI {
             }
         } while (invalidInput);
     }
-    boolean isSameName(){
+    private boolean isSameName(){
         return players[0].getName().equals(this.input);
     }
-    void promptSameNameRetry(){
+    private void promptSameNameRetry(){
         if (isSameName()){
             System.out.println("The name already exist. Try again.");
         }
     }
 
-    public void setPlayer1(){
+    private void setPlayer1(){
         players[0].setName(this.input);
         players[0].setUserTypeUser();
     }
-    public void setPlayer2(){
+    private void setPlayer2(){
         players[1].setName(this.input);
         players[1].setUserTypeUser();
     }
@@ -122,7 +122,7 @@ public class GameUI {
         players[1].setUserTypeCPU();
     }
 
-    public void askPosInput(){
+    private void askPosInput(){
         boolean invalidInput;
         boolean posExist = false;
         Scanner scan = new Scanner(System.in);
@@ -170,7 +170,7 @@ public class GameUI {
         }
         return true;
     }
-    boolean validateStartGame(String word){
+    private boolean validateStartGame(String word){
         if (word.length() > 1){
             return false;
         }
@@ -178,7 +178,7 @@ public class GameUI {
         String charList = "[sq]";
         return matchAgainstList(charList, word);
     }
-    boolean validateUserName(String word){
+    private boolean validateUserName(String word){
         if (word.equalsIgnoreCase("cpu")){
             return false;
         }
@@ -186,12 +186,12 @@ public class GameUI {
         return matchAgainstList(charList, word);
     }
 
-    boolean validatePosition(){
+    private boolean validatePosition(){
         String charList = "[0-8]";
         return matchAgainstList(charList, this.input);
     }
 
-    boolean positionExist(){
+    private boolean positionExist(){
         int iPos = Integer.parseInt(this.input);
         List<Integer> posList = new ArrayList<>();
         boolean output;
@@ -204,7 +204,7 @@ public class GameUI {
         output = posList.contains(iPos);
         return output;
     }
-    void setPositionOnBoard(String position){
+    private void setPositionOnBoard(String position){
         int iPos = Integer.parseInt(position);
         String placement = this.currentPlayer.getPlacementValue();
         switch (iPos){
@@ -220,7 +220,7 @@ public class GameUI {
         }
         this.currentPlayer.setPosition(iPos);
     }
-    void gameBoard(){
+    private void gameBoard(){
         for (String[] row: this.gameboard.getGameBoard()) {
             for (String item: row) {
                 System.out.print(item);
@@ -380,7 +380,7 @@ public class GameUI {
         return nextMove;
     }
 
-    boolean isGameWon(Player player){
+    private boolean isGameWon(Player player){
         List<Integer> posList = player.getPosHistory();
         List<Integer[]> winList = this.data.getWinMoveList();
         Collections.sort(posList);
@@ -392,7 +392,7 @@ public class GameUI {
         }
         return false;
     }
-    boolean isGameDraw(){
+    private boolean isGameDraw(){
         List<Integer> posList = combinePosHistory();
 
         int total = posList.stream()
@@ -413,7 +413,7 @@ public class GameUI {
         System.out.println(msg);
     }
 
-    void gameEnding(){
+    private void gameEnding(){
 
         for (Player player : players) {
             if (!player.getUserType().equals(EPlayerType.CPU)){
@@ -422,7 +422,7 @@ public class GameUI {
         }
     }
 
-    void gameInProcess() {
+    private void gameInProcess() {
         boolean toContinue;
         this.data = new PossibleWin();
         this.gameboard = new GameBoard();
@@ -445,7 +445,7 @@ public class GameUI {
             }
         } while (toContinue);
     }
-    void gamePlayerCPU(){
+    private void gamePlayerCPU(){
         for (Player player: players) {
             player.resetHistory();
         }
@@ -462,7 +462,7 @@ public class GameUI {
             }
         }
     }
-    boolean validateRestartGame(String word){
+    private boolean validateRestartGame(String word){
         if (word.length() > 1){
             return false;
         }
@@ -488,6 +488,9 @@ public class GameUI {
 
         return output;
     }
+    private void promptGameEnd(){
+        System.out.println("Thank you for playing.");
+    }
     void runGame(){
         askToStart();
         askUserName();
@@ -500,5 +503,7 @@ public class GameUI {
             gameBoard();
             gameEnding();
         } while (playGameAgain());
+
+        promptGameEnd();
     }
 }
